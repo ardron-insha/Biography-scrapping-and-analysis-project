@@ -37,3 +37,5 @@ items2["author"][0]
 items2["URL"] = items2.raw_code.str.split('data-quickview-url="').str[1]
 items2["URL"] = items2.URL.str.split('"',1).str[0]
 items2["Prefix"] = "https://www.barnesandnoble.com"
+
+items2.to_csv("URLs.csv")
