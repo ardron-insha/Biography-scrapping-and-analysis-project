@@ -1,19 +1,39 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Sep 28 09:43:57 2020
+Created on Mon Sep 21 14:36:15 2020
 
 @author: ichaddha
 """
 
-##Selenium tutorial
+
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-driver = webdriver.Chrome(executable_path=r"C:\Users\ichaddha\Downloads\chromedriver.exe")
 
-driver.get("https://www.goodreads.com/genres/autobiography")
-link = driver.find_element_by_link_text("Too Much and Never Enough: How My Family Created the World's Most Dangerous Man")
-driver.find_element_by_css_selector('.bookImage').get_attribute('href')
+import pandas as pd
 
-elem = driver.find_element(By.CSS_SELECTOR, "img[src='https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1594640055l/54081499._SY475_.jpg']").click()
-elem.click()
+
+import requests
+from bs4 import BeautifulSoup
+
+URL = 'https://www.barnesandnoble.com/b/new-releases/_/N-1oyg?Nrpp=40&Ns=P_Publication_Date%7C1&page=1'
+page = requests.get(URL)
+
+soup = BeautifulSoup(page.text)
+
+
+items2 = soup.select(".bnBadgeHere")
+
+res = []
+for i in items2:
+    res.append(str(i))
+    
+items2=pd.DataFrame({"raw_code": res})
+items2["raw_code"] = items2.raw_code.astype(str)
+items2["raw_code"][0]
+items2["book"] = items2.raw_code.str.split('Title:').str[1]
+items2["book"] = items2.book.str.split(':',1).str[0]
+items2["author"] = items2.raw_code.str.split('Author:').str[1]
+items2["author"] = items2.author.str.split('"',1).str[0]
+items2["author"][0]
+items2["URL"] = items2.raw_code.str.split('data-quickview-url="').str[1]
+items2["URL"] = items2.URL.str.split('"',1).str[0]
+items2["Prefix"] = "https://www.barnesandnoble.com/"
