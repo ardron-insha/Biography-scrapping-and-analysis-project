@@ -13,11 +13,13 @@ import requests
 from bs4 import BeautifulSoup
 import urllib
 from urllib.request import urlopen
-import csv
 import time
 import re
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 
-items = pd.read_csv(r"C:\Users\ichaddha\Documents\URLs.csv")
+items = pd.read_csv(r"URLs.csv")
 book_info = []
 female = r'\bher\b|\bshe\b|\bwoman\b|\bherself\b'
 male = r'\bhim\b|\bhis\b|\bhe\b|\bman\b|\bhimself\b'
@@ -69,12 +71,35 @@ for i in items.URL:
     else:
         items3["assumed_author_gender"] = "Unknown"
     items3.drop(columns=["raw_code"], inplace=True)
-    items_fin = pd.concat([items2, items3], axis=1)
-    book_info.append(items_fin)
-    time.sleep(2.4)
+    
+    ##reviews
+    driver = webdriver.Chrome(executable_path=r"chromedriver.exe")
 
+    driver.get(URL)
+    time.sleep(2.4)
+    els = driver.find_elements_by_css_selector("#ratings-summary")
+    items5 = [el.text for el in els]
+    res = []
+    res.append(str(items5))
+        
+    items5=pd.DataFrame({"raw_code": res})
+   
+    items5["avg_rating"] = items5.raw_code.str.split('\[\'',1).str[1]
+    items5["avg_rating"] = items5.avg_rating.str.split('\\',1).str[0]
+    
+    items5["no_of_reviews"] = items5.raw_code.str.split('(').str[1]
+    items5["no_of_reviews"] = items5.no_of_reviews.str.split(')',1).str[0]
+    
+    items_fin = pd.concat([items2, items3, items5], axis=1)
+    book_info.append(items_fin)
+    driver.quit() 
+    time.sleep(2.4)
+    
 book_info = pd.concat(book_info)
 
 books_df = items.merge(book_info, how= "left",on = "URL")
-books_df.drop(columns=["raw_code", "Prefix"], inplace=True)
-books_df.to_csv(r"Book_Info.csv")
+books_df.drop(columns=["raw_code_x","raw_code_y", "Prefix"], inplace=True)
+
+books_df['avg_rating'] = ["0" if avg_rating == " (0)']" else avg_rating for avg_rating in books_df['avg_rating']]
+
+books_df.to_csv("Book_Info.csv")
